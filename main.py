@@ -81,6 +81,72 @@ class UpdateTempAdminRequest(BaseModel):
     username: str
     isTempAdmin: bool
 
+
+
+# Add these new models near your other Pydantic models
+class QuestionType(BaseModel):
+    value: str
+    icon: str = "FileText"  # Default icon
+
+class QuestionTypeList(BaseModel):
+    question_types: List[QuestionType]
+
+# Add these new endpoints to your FastAPI app
+
+@app.get("/get-question-types", response_model=QuestionTypeList)
+async def get_question_types():
+    try:
+        # Get question types from Firestore
+        doc_ref = db.collection("config").document("question_types")
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            return {"question_types": doc.to_dict().get("types", [])}
+        else:
+            # Initialize with default types if none exist
+            default_types = [
+                {"value": "Aptitude", "icon": "FileText"},
+                {"value": "Coding", "icon": "Code"},
+                {"value": "System Design", "icon": "FileText"},
+                {"value": "Behavioral", "icon": "Users"},
+                {"value": "Code Review", "icon": "Code"},
+                {"value": "Technical", "icon": "FileText"},
+                {"value": "DSA questions", "icon": "FileText"}
+            ]
+            doc_ref.set({"types": default_types})
+            return {"question_types": default_types}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/add-question-type")
+async def add_question_type(question_type: QuestionType):
+    try:
+        doc_ref = db.collection("config").document("question_types")
+        
+        # Get existing types
+        doc = doc_ref.get()
+        existing_types = doc.to_dict().get("types", []) if doc.exists else []
+        
+        # Check if type already exists
+        if any(t["value"].lower() == question_type.value.lower() for t in existing_types):
+            raise HTTPException(status_code=400, detail="Question type already exists")
+        
+        # Add new type
+        new_type = {
+            "value": question_type.value,
+            "icon": question_type.icon
+        }
+        existing_types.append(new_type)
+        
+        # Update Firestore
+        doc_ref.set({"types": existing_types})
+        
+        return {"success": True, "message": "Question type added successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+
+
 def clean_none(data):
     if isinstance(data, dict):
         return {k: clean_none(v) for k, v in data.items() if v is not None}
