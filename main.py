@@ -16,7 +16,9 @@ db = initialize_firebase()
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://interview-process-tau.vercel.app"],
+    allow_origins=["https://interview-process-tau.vercel.app","*", "https://interview-process-tau.vercel.app", 
+        "https://interview-process-git-main-sanjay-v-gs-projects.vercel.app",
+        "https://interview-process-kwsx1rxyb-sanjay-v-gs-projects.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
